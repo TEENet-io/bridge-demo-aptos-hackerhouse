@@ -2,6 +2,7 @@
 name = "BtcBridgeContractV2"
 version = "1.0.0"
 authors = [""]
+upgrade_policy = "compatible"
 
 [addresses]
 my_address = "0x1319db9743efbef92e2ed32e122a4690f466fbbb8e34cd6ccffb93e8cb68447d"

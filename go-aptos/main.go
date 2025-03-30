@@ -20,6 +20,10 @@ func printUsage() {
 	fmt.Println("  注册TWBTC: ./main register-twbtc")
 	fmt.Println("  发送TWBTC: ./main send-twbtc <接收地址> <数量>")
 	fmt.Println("  初始化桥接: ./main init-bridge <费用账户地址> <费用>")
+	fmt.Println("  redeem-request: ./main redeem-request <接收地址> <数量>")
+	fmt.Println("  mint: ./main mint <btc_tx_id> <接收地址> <数量>")
+	fmt.Println("  注册TWBTC: ./main registerTWBTC <接收地址>")
+	fmt.Println("  初始化TWBTC: ./main init-twbtc")
 }
 
 // 主函数
@@ -203,6 +207,16 @@ func main() {
 		logSuccess(fmt.Sprintf("成功发送 %s BTC 到地址 %s", amountStr, recipientStr))
 		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
 
+	case "init-twbtc":
+		// 初始化TWBTC
+		txHash, err := initTWBTC(client, account, moduleAddress)
+		if err != nil {
+			logError(fmt.Sprintf("初始化TWBTC失败: %v", err))
+			os.Exit(1)
+		}
+		logSuccess(fmt.Sprintf("成功初始化TWBTC"))
+		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
+
 	case "init-bridge":
 		// 初始化桥接
 		if len(os.Args) < 4 {
@@ -227,6 +241,75 @@ func main() {
 		}
 		logSuccess(fmt.Sprintf("成功初始化桥接"))
 		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
+
+	case "redeem-request":
+		// 赎回请求
+		if len(os.Args) < 4 {
+			logError("错误: 赎回请求需要指定接收地址和数量")
+			fmt.Println("用法: ./main redeem-request <接收地址> <数量(BTC)>")
+			os.Exit(1)
+		}
+		recipientStr := os.Args[2]
+		amountStr := os.Args[3]
+
+		amount, err := strconv.ParseUint(amountStr, 10, 64)
+		if err != nil {
+			logError(fmt.Sprintf("错误: 无效的金额 %s", amountStr))
+			os.Exit(1)
+		}
+		txHash, err := redeemRequest(client, account, moduleAddress, recipientStr, amount)
+		if err != nil {
+			logError(fmt.Sprintf("赎回请求失败: %v", err))
+			os.Exit(1)
+		}
+		logSuccess(fmt.Sprintf("成功发送 %s BTC 到地址 %s", amountStr, recipientStr))
+		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
+
+	case "registerTWBTC":
+		if len(os.Args) < 3 {
+			logError("错误: 注册TWBTC需要指定接收地址")
+			fmt.Println("用法: ./main registerTWBTC <接收地址>")
+			os.Exit(1)
+		}
+		receiverAddressStr := os.Args[2]
+		receiverAddress := aptos.AccountAddress{}
+		err := receiverAddress.ParseStringRelaxed(receiverAddressStr)
+		txHash, err := registerTWBTC(client, account, moduleAddress, receiverAddress)
+		if err != nil {
+			logError(fmt.Sprintf("注册TWBTC失败: %v", err))
+			os.Exit(1)
+		}
+		logSuccess(fmt.Sprintf("成功注册TWBTC"))
+		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
+	case "mint":
+		// 赎回确认
+		if len(os.Args) < 4 {
+			logError("错误: 赎回确认需要指定btc_tx_id")
+			fmt.Println("用法: ./main mint <btc_tx_id> <接收地址> <数量(BTC)>")
+			os.Exit(1)
+		}
+		btc_tx_id := os.Args[2]
+		recipientStr := os.Args[3]
+		amountStr := os.Args[4]
+		recipient := aptos.AccountAddress{}
+		err := recipient.ParseStringRelaxed(recipientStr)
+		if err != nil {
+			logError(fmt.Sprintf("解析接收地址失败: %v", err))
+			os.Exit(1)
+		}
+		amount, err := strconv.ParseUint(amountStr, 10, 64)
+		if err != nil {
+			logError(fmt.Sprintf("错误: 无效的金额 %s", amountStr))
+			os.Exit(1)
+		}
+		txHash, err := mintTWBTC(client, account, moduleAddress, recipient, amount, btc_tx_id)
+		if err != nil {
+			logError(fmt.Sprintf("赎回确认失败: %v", err))
+			os.Exit(1)
+		}
+		logSuccess(fmt.Sprintf("成功发送 %s BTC 到地址 %s", amountStr, recipientStr))
+		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
+		
 	default:
 		logError(fmt.Sprintf("未知命令: %s", command))
 		fmt.Println("可用命令: check-apt, send-apt, check-twbtc, register-twbtc, send-twbtc")
