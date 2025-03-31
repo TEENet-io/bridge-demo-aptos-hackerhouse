@@ -1,0 +1,1 @@
+go build -o aptos_client *.go

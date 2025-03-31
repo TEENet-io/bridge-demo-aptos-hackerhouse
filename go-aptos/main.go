@@ -24,6 +24,7 @@ func printUsage() {
 	fmt.Println("  mint: ./main mint <btc_tx_id> <接收地址> <数量>")
 	fmt.Println("  注册TWBTC: ./main registerTWBTC <接收地址>")
 	fmt.Println("  初始化TWBTC: ./main init-twbtc")
+	fmt.Println("  查询事件: ./main query-events [查询时间秒]")
 }
 
 // 主函数
@@ -310,6 +311,32 @@ func main() {
 		logSuccess(fmt.Sprintf("成功发送 %s BTC 到地址 %s", amountStr, recipientStr))
 		logSuccess(fmt.Sprintf("交易哈希: %s", txHash))
 		
+	case "query-events":
+		// 查询事件
+
+		checkLoopTime := 60 // 默认60秒
+		if len(os.Args) > 2 {
+			inputTime, err := strconv.Atoi(os.Args[2])
+			if err != nil {
+				logError(fmt.Sprintf("解析查询时间参数失败: %v", err))
+				fmt.Println("使用默认查询时间: 60秒")
+			} else {
+				checkLoopTime = inputTime
+				fmt.Printf("设置查询时间为: %d秒\n", checkLoopTime)
+			}
+		} else {
+			fmt.Println("未指定查询时间，使用默认值: 60秒")
+		}
+
+		err := QueryBridgeStatus(client, moduleAddress, checkLoopTime)
+		if err != nil {
+			logError(fmt.Sprintf("查询事件失败: %v", err))
+			os.Exit(1)
+		}
+		// 或者单独查询特定事件
+		// 获取查询时间参数
+
+
 	default:
 		logError(fmt.Sprintf("未知命令: %s", command))
 		fmt.Println("可用命令: check-apt, send-apt, check-twbtc, register-twbtc, send-twbtc")
